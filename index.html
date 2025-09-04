@@ -29,6 +29,7 @@
       <nav class="tabs">
         <button id="calculator-tab" class="tab-btn active-tab" aria-selected="true">Calculator</button>
         <button id="results-summary-tab" class="tab-btn hidden" aria-selected="false">Results</button>
+        <button id="diagram-tab" class="tab-btn hidden" aria-selected="false">Hazardous Area Diagram</button>
         <button id="admin-tab" class="tab-btn" aria-selected="false">Admin</button>
         <button id="report-tab" class="tab-btn hidden" aria-selected="false">Report</button>
       </nav>
@@ -40,23 +41,53 @@
             <legend>Project Information</legend>
             <div class="input-grid">
               <div class="input-group full-width-item">
-                  <label for="project-name">Project Name</label>
+                  <label for="project-name">
+                    Project Name
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">A unique name for the project for easy identification in saved files and reports.</span>
+                    </span>
+                  </label>
                   <input type="text" id="project-name" name="project-name" placeholder="e.g., Compressor Station Upgrade" required value="Juniper Ridge District regulating station">
               </div>
               <div class="input-group">
-                  <label for="location">Location</label>
+                  <label for="location">
+                    Location
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">The geographical location of the project (e.g., city, state).</span>
+                    </span>
+                  </label>
                   <input type="text" id="location" name="location" placeholder="e.g., Midland, TX" required value="Montgomery Texas">
               </div>
               <div class="input-group">
-                  <label for="company">Company</label>
+                  <label for="company">
+                    Company
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">The name of the company responsible for the project.</span>
+                    </span>
+                  </label>
                   <input type="text" id="company" name="company" placeholder="e.g., ACME Energy" required value="unitil">
               </div>
               <div class="input-group">
-                  <label for="date">Date</label>
+                  <label for="date">
+                    Date
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">The date the calculation is performed. Defaults to today.</span>
+                    </span>
+                  </label>
                   <input type="date" id="date" name="date" required>
               </div>
               <div class="input-group">
-                  <label for="performed-by">Performed By</label>
+                  <label for="performed-by">
+                    Performed By
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">The name of the person performing the calculation.</span>
+                    </span>
+                  </label>
                   <input type="text" id="performed-by" name="performed-by" placeholder="e.g., J. Doe" required value="Tim Bickford🎸">
               </div>
             </div>
@@ -67,7 +98,13 @@
 
             <div class="input-grid">
               <div class="input-group full-width-item">
-                <label for="calculation-goal">Calculation Goal</label>
+                <label for="calculation-goal">
+                  Calculation Goal
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The primary objective of the ventilation calculation, which often relates to electrical safety standards.</span>
+                  </span>
+                </label>
                 <select id="calculation-goal" name="calculation-goal" required>
                   <option value="reclassify-d1-to-d2">
                     Reclassify from Class 1 Div 1 to Div 2
@@ -77,8 +114,27 @@
                   </option>
                 </select>
               </div>
+               <div class="input-group full-width-item">
+                <label for="gas-type">
+                  Gas Type
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Crucial for vent placement. Lighter-than-air gases (methane) rise, requiring low inlets and high outlets. Heavier-than-air gases (propane) sink, requiring high inlets and low outlets.</span>
+                  </span>
+                </label>
+                <select id="gas-type" name="gas-type" required>
+                  <option value="lighter-than-air" selected>Lighter-than-air (e.g., Natural Gas)</option>
+                  <option value="heavier-than-air">Heavier-than-air (e.g., Propane)</option>
+                </select>
+              </div>
               <div class="input-group">
-                <label for="length">Building Length (ft)</label>
+                <label for="length">
+                  Building Length (ft)
+                   <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The internal length of the building or enclosure in feet.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="length"
@@ -90,7 +146,13 @@
                 />
               </div>
               <div class="input-group">
-                <label for="width">Building Width (ft)</label>
+                <label for="width">
+                  Building Width (ft)
+                   <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The internal width of the building or enclosure in feet.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="width"
@@ -102,7 +164,13 @@
                 />
               </div>
               <div class="input-group">
-                <label for="height" title="The vertical distance between the center of the lower and upper ventilation openings.">Building Height (ft)</label>
+                <label for="height">
+                  Vertical Vent Separation (ft)
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The vertical distance between the center of the lower inlet vents and the center of the upper outlet vents. This is NOT the overall building height.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="height"
@@ -148,7 +216,13 @@
                 />
               </div>
               <div class="input-group">
-                <label for="wind-velocity" title="A conservative, year-round average wind speed for the location.">Average Wind Velocity (mph)</label>
+                <label for="wind-velocity">
+                  Average Wind Velocity (mph)
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">A conservative, year-round average wind speed for the location. Low wind speeds represent a worst-case scenario for wind-driven ventilation.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="wind-velocity"
@@ -161,15 +235,27 @@
               </div>
 
               <div class="input-group">
-                <label for="building-orientation" title="The orientation of the building's vents relative to the prevailing wind direction.">Building Orientation</label>
+                <label for="building-orientation">
+                  Building Orientation (sets Cv)
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The orientation of the building's vents relative to the prevailing wind direction. 'Perpendicular' offers the most effective wind-driven flow, while 'Parallel' offers the least.</span>
+                  </span>
+                </label>
                 <select id="building-orientation" name="building-orientation">
-                  <option value="1.0" selected>Perpendicular (0°) - Most Effective</option>
-                  <option value="0.7">Angled (45°) - Moderately Effective</option>
-                  <option value="0.3">Parallel (90°) - Least Effective</option>
+                  <option value="0.6" selected>Perpendicular (Cv=0.6) - Most Effective</option>
+                  <option value="0.425">Angled (Cv=0.425) - Moderately Effective</option>
+                  <option value="0.25">Parallel (Cv=0.25) - Least Effective</option>
                 </select>
               </div>
               <div class="input-group">
-                <label for="surrounding-terrain" title="The local environment affects wind speed at the building's height.">Surrounding Terrain</label>
+                <label for="surrounding-terrain">
+                  Surrounding Terrain
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The local environment affects wind speed at the building's height. Open terrain has the highest wind exposure, while urban areas have the lowest.</span>
+                  </span>
+                </label>
                 <select id="surrounding-terrain" name="surrounding-terrain">
                   <option value="1.0" selected>Open Terrain (Flat, open country)</option>
                   <option value="0.85">Suburban / Wooded (Residential areas)</option>
@@ -177,7 +263,13 @@
                 </select>
               </div>
               <div class="input-group">
-                <label for="vent-opening-type" title="The physical shape of the vent opening affects airflow efficiency (Discharge Coefficient K).">Vent Opening Type (K)</label>
+                <label for="vent-opening-type">
+                  Vent Opening Type (K)
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">The physical shape of the vent opening, which affects airflow efficiency. A sharp-edged orifice is a common and conservative choice.</span>
+                  </span>
+                </label>
                 <select id="vent-opening-type" name="vent-opening-type">
                   <option value="0.65" selected>Sharp-Edged Orifice (Typical, K=0.65)</option>
                   <option value="0.98">Well-Rounded Inlet (Efficient, K=0.98)</option>
@@ -186,7 +278,13 @@
               </div>
 
                <div class="input-group">
-                <label for="inlet-obstruction" title="Accounts for airflow reduction from items like screens or louvers on the inlet vent.">Inlet Vent Obstruction</label>
+                <label for="inlet-obstruction">
+                  Inlet Vent Obstruction
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Accounts for airflow reduction from items like screens or louvers on the inlet vent. This value represents the percentage of the area that is open (e.g., 55% Free Area means 45% is blocked).</span>
+                  </span>
+                </label>
                 <select id="inlet-obstruction" name="inlet-obstruction">
                   <option value="1.0">None (Unobstructed)</option>
                   <option value="0.92">Bird Screen (92% Free Area)</option>
@@ -197,7 +295,13 @@
                 </select>
               </div>
               <div class="input-group">
-                <label for="outlet-obstruction" title="Accounts for airflow reduction from items like screens or louvers on the outlet vent.">Outlet Vent Obstruction</label>
+                <label for="outlet-obstruction">
+                  Outlet Vent Obstruction
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Accounts for airflow reduction from items like screens or louvers on the outlet vent. This value represents the percentage of the area that is open (e.g., 55% Free Area means 45% is blocked).</span>
+                  </span>
+                </label>
                 <select id="outlet-obstruction" name="outlet-obstruction">
                   <option value="1.0">None (Unobstructed)</option>
                   <option value="0.92">Bird Screen (92% Free Area)</option>
@@ -209,7 +313,13 @@
               </div>
 
               <div class="input-group full-width-item">
-                <label for="calculation-method">Calculation Method</label>
+                <label for="calculation-method">
+                  Calculation Method
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Choose the standard for calculating the required ventilation rate. 'Area Method' is a general approach, while 'Fugitive Emission Method' is for quantifiable leak sources.</span>
+                  </span>
+                </label>
                 <select id="calculation-method" name="calculation-method" required>
                   <option value="area-method" selected>
                     Area Method (AGA XL1001)
@@ -222,20 +332,39 @@
             </div>
 
             <div id="fugitive-emission-inputs-wrapper" class="hidden">
-              <h3 class="subsection-title">Fugitive Emission Parameters</h3>
+              <h3 class="subsection-title">Fugitive Emission Source Builder</h3>
+              <div class="source-builder-grid">
+                  <div class="input-group">
+                      <label for="fugitive-source-type">Component Type</label>
+                      <select id="fugitive-source-type">
+                          <!-- Options populated by JS -->
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label for="fugitive-source-qty">Quantity</label>
+                      <input type="number" id="fugitive-source-qty" value="1" min="1" step="1">
+                  </div>
+                  <button type="button" id="add-fugitive-source-btn" class="add-btn">+</button>
+              </div>
+
+              <div id="fugitive-sources-list">
+                  <!-- Added components will appear here -->
+              </div>
+              
+              <div id="total-leak-rate-display" class="total-leak-rate-container">
+                  <label>Total Calculated Leak Rate (Q_leak)</label>
+                  <div id="total-leak-rate-value">0.00 CFM</div>
+              </div>
+
               <div class="input-grid">
                 <div class="input-group">
-                  <label for="leak-rate">Gas Leak Rate (Q_leak) (CFM)</label>
-                  <input
-                    type="number"
-                    id="leak-rate"
-                    name="leak-rate"
-                    min="0"
-                    step="any"
-                  />
-                </div>
-                <div class="input-group">
-                  <label for="lfl" title="The Lower Flammable Limit of the potential gas leak.">Gas LFL (%)</label>
+                  <label for="lfl">
+                    Gas LFL (%)
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">The Lower Flammable Limit of the potential gas leak, expressed as a percentage. This is the minimum concentration of the gas in air that can ignite.</span>
+                    </span>
+                  </label>
                   <input
                     type="number"
                     id="lfl"
@@ -247,7 +376,13 @@
                   />
                 </div>
                 <div class="input-group">
-                  <label for="safety-factor" title="Safety factor (often 0.25 for 25% LFL) to ensure dilution well below the flammable limit.">Safety Factor (C)</label>
+                  <label for="safety-factor">
+                    Safety Factor (C)
+                    <span class="tooltip-container">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">A safety multiplier (typically 0.25 for 25% LFL) used to ensure the calculated ventilation rate keeps the gas concentration well below the flammable limit.</span>
+                    </span>
+                  </label>
                   <input
                     type="number"
                     id="safety-factor"
@@ -290,6 +425,24 @@
       
       <div id="results-summary-content" class="hidden content-panel">
         <!-- Detailed results report will be dynamically inserted here -->
+      </div>
+
+      <div id="diagram-content" class="hidden">
+        <div class="info-note" style="text-align: left; padding: 1rem; margin-bottom: 1rem;">
+          Drag equipment from the palette on the left onto the building floor plan. The diagram uses a top-down view. Distances are to scale.
+        </div>
+        <div class="diagram-layout">
+            <div id="diagram-palette" class="diagram-palette">
+                <h4>Equipment Palette</h4>
+                <!-- Items populated by JS -->
+            </div>
+            <div class="canvas-wrapper">
+                <svg id="diagram-canvas"></svg>
+            </div>
+        </div>
+        <div class="diagram-actions">
+            <button id="clear-diagram-btn" class="secondary-btn">Clear Diagram</button>
+        </div>
       </div>
 
       <div id="admin-login-content" class="hidden">
