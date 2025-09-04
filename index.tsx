@@ -201,6 +201,8 @@ form.addEventListener("submit", (e) => {
         leakRate: parseFloat(formData.get("leak-rate") as string),
         lfl: parseFloat(formData.get("lfl") as string),
         safetyFactor: parseFloat(formData.get("safety-factor") as string),
+        inletObstructionFactor: parseFloat(formData.get("inlet-obstruction") as string),
+        outletObstructionFactor: parseFloat(formData.get("outlet-obstruction") as string),
     };
 
 
@@ -239,6 +241,8 @@ interface ReportInputs {
     leakRate?: number;
     lfl?: number;
     safetyFactor?: number;
+    inletObstructionFactor: number;
+    outletObstructionFactor: number;
 }
 
 interface ProjectInfo {
@@ -249,8 +253,21 @@ interface ProjectInfo {
     performedBy: string;
 }
 
+// Helper to get obstruction name from factor for reports
+const getObstructionName = (factor: number): string => {
+    switch (factor) {
+        case 1.0: return 'None (Unobstructed)';
+        case 0.92: return 'Bird Screen (92% Free Area)';
+        case 0.85: return 'Insect Screen (85% Free Area)';
+        case 0.75: return 'Weather Hood (75% Free Area)';
+        case 0.55: return 'Standard Louver (55% Free Area)';
+        case 0.35: return 'Acoustic Louver (35% Free Area)';
+        default: return `Custom Factor: ${factor}`;
+    }
+};
+
 function generateLatexReport(inputs: ReportInputs, projectInfo: ProjectInfo): string {
-    const { length, width, height, insideTempF, outsideTempF, goal, method, leakRate, lfl, safetyFactor } = inputs;
+    const { length, width, height, insideTempF, outsideTempF, goal, method, leakRate, lfl, safetyFactor, inletObstructionFactor, outletObstructionFactor } = inputs;
 
     // Helper to escape LaTeX special characters from user input
     const escapeLatex = (str: string) => {
@@ -271,6 +288,8 @@ function generateLatexReport(inputs: ReportInputs, projectInfo: ProjectInfo): st
     const safeLocation = escapeLatex(projectInfo.location);
     const safeCompany = escapeLatex(projectInfo.company);
     const safePerformedBy = escapeLatex(projectInfo.performedBy);
+    const inletObstructionName = escapeLatex(getObstructionName(inletObstructionFactor));
+    const outletObstructionName = escapeLatex(getObstructionName(outletObstructionFactor));
 
 
     // --- Intermediate Calculations ---
@@ -385,17 +404,22 @@ Therefore, the minimum required airflow rate for this building is \\textbf{${qRe
     const deltaT = Math.abs(tiRankine - toRankine);
     const sqrtInnerTerm = (2 * g * dh * deltaT) / tempDenominator;
     const sqrtTerm = Math.sqrt(sqrtInnerTerm);
-    const requiredArea = qRequired / (60 * K * sqrtTerm);
+    const singleOpeningFreeArea = qRequired / (60 * K * sqrtTerm);
+    
+    const grossInletArea = singleOpeningFreeArea / inletObstructionFactor;
+    const grossOutletArea = singleOpeningFreeArea / outletObstructionFactor;
+    const totalRequiredGrossArea = grossInletArea + grossOutletArea;
+
 
     const ventAreaLatex = `
 \\subsection{Calculation of Required Free Vent Area (A)}
 The required airflow ($Q_{required}$) is achieved through natural ventilation driven by the stack effect. The stack effect is the bulk movement of air due to density differences arising from temperature differentials between the building's interior and exterior. The physical vent area needed to facilitate this airflow is calculated using the following industry-standard formula:
 \\begin{equation}
-    A = \\frac{Q}{60 \\cdot K \\cdot \\sqrt{\\frac{2 \\cdot g \\cdot \\Delta h \\cdot |T_i - T_o|}{T_{abs, max}}}}
+    A_{free} = \\frac{Q}{60 \\cdot K \\cdot \\sqrt{\\frac{2 \\cdot g \\cdot \\Delta h \\cdot |T_i - T_o|}{T_{abs, max}}}}
 \\end{equation}
 \\subsubsection*{Definition of Variables and Constants}
 \\begin{itemize}
-    \\item $A$ = Total required free vent area in square feet (ft$^2$). This is the value to be calculated.
+    \\item $A_{free}$ = Required \\textbf{free} (unobstructed) vent area for \\textbf{each} opening (i.e., for the inlet and for the outlet) in square feet (ft$^2$). This is the value to be calculated.
     \\item $Q$ = Required airflow rate from the previous step, in CFM. ($Q = ${qRequired.toFixed(2)} \\text{ CFM})
     \\item $60$ = Conversion factor from minutes to seconds.
     \\item $K$ = Discharge Coefficient (dimensionless). This factor accounts for the efficiency of the opening. A value of \\textbf{${K}} is a standard, conservative assumption for a sharp-edged orifice or louver.
@@ -406,7 +430,7 @@ The required airflow ($Q_{required}$) is achieved through natural ventilation dr
     \\item $T_{abs, max}$ = The greater of the inside or outside absolute temperature, used as the denominator to represent the density of the air exiting the building.
 \\end{itemize}
 
-\\subsubsection*{Step-by-Step Calculation}
+\\subsubsection*{Step-by-Step Calculation for Free Area}
 \\paragraph{1. Convert Temperatures to Absolute Scale (Rankine)}
 The formula requires temperatures to be in an absolute scale.
 \\begin{itemize}
@@ -426,9 +450,22 @@ The formula requires temperatures to be in an absolute scale.
     \\sqrt{${sqrtInnerTerm.toFixed(3)}} = ${sqrtTerm.toFixed(3)} \\text{ ft/s}
 \\end{equation}
 
-\\paragraph{4. Substitute all values to find the required area A}
+\\paragraph{4. Substitute all values to find the required free area per opening, $A_{free}$}
 \\begin{equation}
-    A = \\frac{${qRequired.toFixed(2)}}{60 \\cdot ${K} \\cdot ${sqrtTerm.toFixed(3)}} = \\frac{${qRequired.toFixed(2)}}{${(60 * K * sqrtTerm).toFixed(2)}} = ${requiredArea.toFixed(2)} \\text{ ft}^2
+    A_{free} = \\frac{${qRequired.toFixed(2)}}{60 \\cdot ${K} \\cdot ${sqrtTerm.toFixed(3)}} = \\frac{${qRequired.toFixed(2)}}{${(60 * K * sqrtTerm).toFixed(2)}} = ${singleOpeningFreeArea.toFixed(2)} \\text{ ft}^2
+\\end{equation}
+
+\\subsection{Adjustment for Vent Obstructions (Gross Area)}
+The calculated $A_{free}$ represents the net clear area required. Obstructions like louvers and screens reduce the effective area of a vent. Therefore, the \\textbf{gross} physical area of the vent must be larger. This is calculated by dividing the free area by the obstruction's free area factor.
+
+\\subsubsection*{Low-Level Inlet Gross Area}
+\\begin{equation}
+    A_{gross, inlet} = \\frac{A_{free}}{\\text{Factor}_{inlet}} = \\frac{${singleOpeningFreeArea.toFixed(2)} \\text{ ft}^2}{${inletObstructionFactor.toFixed(2)}} = ${grossInletArea.toFixed(2)} \\text{ ft}^2
+\\end{equation}
+
+\\subsubsection*{High-Level Outlet Gross Area}
+\\begin{equation}
+    A_{gross, outlet} = \\frac{A_{free}}{\\text{Factor}_{outlet}} = \\frac{${singleOpeningFreeArea.toFixed(2)} \\text{ ft}^2}{${outletObstructionFactor.toFixed(2)}} = ${grossOutletArea.toFixed(2)} \\text{ ft}^2
 \\end{equation}
 `;
 
@@ -475,7 +512,7 @@ The formula requires temperatures to be in an absolute scale.
 \\section{Executive Summary}
 This engineering report details the calculation of natural ventilation requirements for the facility located at ${safeLocation}, for the project titled "${safeProjectName}". The objective is to ensure compliance with standards for a Class 1, Division 2 hazardous area classification.
 
-Based on the input parameters and the selected \\textbf{${methodDisplay}}, the analysis concludes that a \\textbf{total free vent area of ${requiredArea.toFixed(2)} square feet} is required. To achieve effective ventilation for lighter-than-air gases, this area must be divided equally between low-level inlet openings and high-level outlet openings. This report provides a detailed step-by-step breakdown of the calculation process and final recommendations.
+Based on the input parameters and the selected \\textbf{${methodDisplay}}, the analysis concludes that a \\textbf{total installed gross vent area of ${totalRequiredGrossArea.toFixed(2)} square feet} is required. To achieve effective ventilation for lighter-than-air gases, this area must be divided between low-level inlet openings and high-level outlet openings, accounting for any obstructions like louvers or screens. This report provides a detailed step-by-step breakdown of the calculation process and final recommendations.
 
 \\section{Objective}
 ${goalDescription}
@@ -510,6 +547,8 @@ Building Width & ${width.toFixed(2)} ft \\\\
 Building Height & ${height.toFixed(2)} ft \\\\
 Inside Temperature ($T_{i,F}$) & ${insideTempF.toFixed(2)} °F \\\\
 Outside Temperature ($T_{o,F}$) & ${outsideTempF.toFixed(2)} °F \\\\
+Inlet Vent Obstruction & ${inletObstructionName} \\\\
+Outlet Vent Obstruction & ${outletObstructionName} \\\\
 \\midrule
 \\multicolumn{2}{c}{\\textbf{Calculation Method Parameters}} \\\\
 \\midrule
@@ -541,26 +580,28 @@ The key results derived from the calculation process are summarized below.
 \\textbf{Calculated Result} & \\textbf{Value} \\\\ 
 \\midrule
 Required Airflow Rate ($Q_{required}$) & ${qRequired.toFixed(2)} \\text{ CFM} \\\\
-\\textbf{Total Required Free Vent Area (A)} & \\textbf{${requiredArea.toFixed(2)} sq ft} \\\\ 
+Required Free Area per Opening ($A_{free}$) & ${singleOpeningFreeArea.toFixed(2)} \\text{ sq ft} \\\\
 \\midrule
-\\multicolumn{2}{c}{\\textbf{Vent Area Distribution}} \\\\ 
+\\multicolumn{2}{c}{\\textbf{Final Recommended Gross Vent Area}} \\\\ 
 \\midrule
-Required Low-Level Inlet Area (50\\%) & ${(requiredArea / 2).toFixed(2)} \\text{ sq ft} \\\\
-Required High-Level Outlet Area (50\\%) & ${(requiredArea / 2).toFixed(2)} \\text{ sq ft} \\\\
+Required Low-Level Inlet Gross Area & ${grossInletArea.toFixed(2)} \\text{ sq ft} \\\\
+Required High-Level Outlet Gross Area & ${grossOutletArea.toFixed(2)} \\text{ sq ft} \\\\
+\\midrule
+\\textbf{Total Required Gross Vent Area} & \\textbf{${totalRequiredGrossArea.toFixed(2)} sq ft} \\\\ 
 \\bottomrule
 \\end{tabularx}
 \\end{table}
 
 \\section{Final Summary and Recommendation}
-To achieve adequate ventilation for a Class 1, Division 2 classification, a total free vent area of \\textbf{${requiredArea.toFixed(2)} square feet} is required.
+To achieve adequate ventilation for a Class 1, Division 2 classification, a total installed \\textbf{gross vent area of ${totalRequiredGrossArea.toFixed(2)} square feet} is required.
 
-It is strongly recommended that this area be split equally between low-level inlet vents and high-level outlet vents to ensure effective air circulation and purging of lighter-than-air gases (e.g., natural gas).
+It is strongly recommended that this area be split between low-level inlet vents and high-level outlet vents to ensure effective air circulation and purging of lighter-than-air gases (e.g., natural gas). The required gross area for each is specified below to provide the necessary \\textbf{${singleOpeningFreeArea.toFixed(2)} sq ft of free area} at each location.
 \\begin{itemize}
-    \\item \\textbf{Low-Level Inlet Vents:} A total of ${(requiredArea / 2).toFixed(2)} \\text{ sq ft}$ of openings should be located as low as practicable.
-    \\item \\textbf{High-Level Outlet Vents:} A total of ${(requiredArea / 2).toFixed(2)} \\text{ sq ft}$ of openings should be located as high as practicable, such as in the roof or ridge line.
+    \\item \\textbf{Low-Level Inlet Vents:} A total installed gross area of \\textbf{${grossInletArea.toFixed(2)} sq ft} should be located as low as practicable.
+    \\item \\textbf{High-Level Outlet Vents:} A total installed gross area of \\textbf{${grossOutletArea.toFixed(2)} sq ft} should be located as high as practicable.
 \\end{itemize}
 
-\\textbf{Important Note on "Free Area":} The term "free vent area" refers to the net clear area of the opening. The presence of louvers, screens, grilles, or other obstructions can significantly reduce this area. The specified gross area of such devices must be larger to meet the required free area. The manufacturer's data for the selected ventilation devices should be consulted to determine their free area percentage.
+\\textbf{Important Note on "Free Area" vs "Gross Area":} The term "free vent area" refers to the net clear area of the opening. The presence of louvers, screens, grilles, or other obstructions can significantly reduce this area. The "gross area" is the larger physical size of the vent needed to compensate for these obstructions. The manufacturer's data for the selected ventilation devices should be consulted to verify their free area percentage.
 
 \\section{Assumptions and Disclaimer}
 \\subsection*{Assumptions}
@@ -579,7 +620,7 @@ This report provides a preliminary calculation based on the provided data and st
 
 
 function generateEngineeringReport(inputs: ReportInputs): string {
-  const { length, width, height, insideTempF, outsideTempF, goal, method, leakRate, lfl, safetyFactor } = inputs;
+  const { length, width, height, insideTempF, outsideTempF, goal, method, leakRate, lfl, safetyFactor, inletObstructionFactor, outletObstructionFactor } = inputs;
   
   // --- Constants and Initial Calculations ---
   const K = 0.65; // Discharge coefficient
@@ -680,7 +721,12 @@ function generateEngineeringReport(inputs: ReportInputs): string {
   const tempDenominator = Math.max(tiRankine, toRankine); 
   const deltaT = Math.abs(tiRankine - toRankine);
   const sqrtTerm = Math.sqrt((2 * g * dh * deltaT) / tempDenominator);
-  const requiredArea = qRequired / (60 * K * sqrtTerm);
+  const singleOpeningFreeArea = qRequired / (60 * K * sqrtTerm);
+
+  const grossInletArea = singleOpeningFreeArea / inletObstructionFactor;
+  const grossOutletArea = singleOpeningFreeArea / outletObstructionFactor;
+  const totalRequiredGrossArea = grossInletArea + grossOutletArea;
+
 
   // --- Report Section Generation ---
   const summaryInputsContent = `
@@ -691,6 +737,8 @@ function generateEngineeringReport(inputs: ReportInputs): string {
         <tr><td>Building Height</td><td>${height.toFixed(2)} ft</td></tr>
         <tr><td>Inside Temperature</td><td>${insideTempF.toFixed(2)} °F</td></tr>
         <tr><td>Outside Temperature</td><td>${outsideTempF.toFixed(2)} °F</td></tr>
+        <tr><td>Inlet Obstruction</td><td>${getObstructionName(inletObstructionFactor)}</td></tr>
+        <tr><td>Outlet Obstruction</td><td>${getObstructionName(outletObstructionFactor)}</td></tr>
         <tr><td>Calculation Method</td><td>${method === 'area-method' ? 'Area Method (AGA XL1001)' : 'Fugitive Emission Method (API RP 500)'}</td></tr>
         ${method === 'fugitive-emission-method' ? `
         <tr><td>Gas Leak Rate (Q_leak)</td><td>${leakRate.toFixed(2)} CFM</td></tr>
@@ -701,48 +749,40 @@ function generateEngineeringReport(inputs: ReportInputs): string {
   `;
   
   const ventAreaContent = `
-    <h3>5. Calculation of Required Free Vent Area (A)</h3>
-    <p>The final step is to calculate the physical vent area required to achieve Q<sub>required</sub> using natural ventilation driven by the stack effect. The stack effect is the movement of air due to temperature-induced density differences.</p>
-    <p>Formula: <code>A = Q / (60 * K * &radic;(2 * g * &Delta;h * |T<sub>i</sub> - T<sub>o</sub>| / T<sub>i,abs</sub>))</code></p>
-    <h4>Explanation of Constants and Variables:</h4>
+    <h3>5. Calculation of Required Vent Area</h3>
+    <p>This section calculates the physical vent area required to achieve Q<sub>required</sub> using the natural stack effect, which is air movement driven by temperature differences.</p>
+    <h4>A. Required Free Area</h4>
+    <p>First, we calculate the required <strong>free area</strong> (A<sub>free</sub>), which is the unobstructed opening size needed for airflow.</p>
+    <p>Formula: <code>A<sub>free</sub> = Q / (60 * K * &radic;(2 * g * &Delta;h * |T<sub>i</sub> - T<sub>o</sub>| / T<sub>max,abs</sub>))</code></p>
     <ul>
-      <li><b>Q</b>: Required airflow rate from Step 4.</li>
-      <li><b>60</b>: Conversion factor from minutes to seconds.</li>
-      <li><b>K = ${K}</b>: Discharge Coefficient. This dimensionless value represents the efficiency of an opening. A value of 0.65 is standard for sharp-edged openings.</li>
-      <li><b>g = ${g} ft/s²</b>: Acceleration due to gravity in Imperial units.</li>
-      <li><b>&Delta;h = ${dh.toFixed(2)} ft</b>: Height to Neutral Pressure Level. For a simple building, this is assumed to be half the vertical distance between high and low vents.</li>
-      <li><b>T<sub>i</sub>, T<sub>o</sub></b>: Inside and outside temperatures. These must be converted to an absolute scale (Rankine) for this formula.</li>
+      <li><b>Q</b> = ${qRequired.toFixed(2)} CFM</li>
+      <li><b>K</b> = ${K} (Discharge Coefficient)</li>
+      <li><b>g</b> = ${g} ft/s² (Gravity)</li>
+      <li><b>&Delta;h</b> = ${dh.toFixed(2)} ft (Height to Neutral Pressure Level)</li>
+      <li><b>|T<sub>i,abs</sub> - T<sub>o,abs</sub>|</b> = ${deltaT.toFixed(2)} °R (Absolute temp difference)</li>
     </ul>
-    <h4>Substitution of Values:</h4>
+    <p>This calculation results in a required free area of <strong>${singleOpeningFreeArea.toFixed(2)} sq ft per opening</strong> (one for inlet, one for outlet).</p>
+
+    <h4>B. Required Gross Area</h4>
+    <p>Next, we adjust for obstructions like louvers or screens to find the <strong>gross area</strong> (A<sub>gross</sub>), which is the actual size of the vent you need to install.</p>
+    <p>Formula: <code>A<sub>gross</sub> = A<sub>free</sub> / ObstructionFactor</code></p>
     <ul>
-        <li>Q = ${qRequired.toFixed(2)} CFM</li>
-        <li>T<sub>i,abs</sub> = ${insideTempF}°F + 459.67 = <strong>${tiRankine.toFixed(2)} °R</strong> (Inside absolute temperature)</li>
-        <li>T<sub>o,abs</sub> = ${outsideTempF}°F + 459.67 = <strong>${toRankine.toFixed(2)} °R</strong> (Outside absolute temperature)</li>
-        <li>|T<sub>i,abs</sub> - T<sub>o,abs</sub>| = <strong>${deltaT.toFixed(2)} °R</strong> (Absolute temperature difference)</li>
+      <li>Low-Level Inlet: ${singleOpeningFreeArea.toFixed(2)} sq ft / ${inletObstructionFactor.toFixed(2)} = <strong>${grossInletArea.toFixed(2)} sq ft</strong></li>
+       <li>High-Level Outlet: ${singleOpeningFreeArea.toFixed(2)} sq ft / ${outletObstructionFactor.toFixed(2)} = <strong>${grossOutletArea.toFixed(2)} sq ft</strong></li>
     </ul>
-    <h4>Step-by-Step Calculation:</h4>
-     <ol>
-        <li>Calculate the temperature-driven pressure term: (2 * g * &Delta;h * |T<sub>i,abs</sub> - T<sub>o,abs</sub>|) / T<sub>i,abs(max)</sub> = (2 * ${g} * ${dh.toFixed(2)} * ${deltaT.toFixed(2)}) / ${tempDenominator.toFixed(2)} = <strong>${((2 * g * dh * deltaT) / tempDenominator).toFixed(2)}</strong>.</li>
-        <li>Take the square root of this term: &radic;(${( (2 * g * dh * deltaT) / tempDenominator).toFixed(2)}) = <strong>${sqrtTerm.toFixed(3)}</strong>.</li>
-        <li>Calculate the total denominator: 60 * K * (result from previous step) = 60 * ${K} * ${sqrtTerm.toFixed(3)} = <strong>${(60 * K * sqrtTerm).toFixed(2)}</strong>.</li>
-        <li>Calculate the final required area: A = Q / (denominator) = ${qRequired.toFixed(2)} / ${(60 * K * sqrtTerm).toFixed(2)} = <strong>${requiredArea.toFixed(2)} sq ft</strong>.</li>
-    </ol>
+    <p><b>Note:</b> The calculated free area represents the required unobstructed area for low-level inlets, and an equal free area is required for high-level outlets. The gross area is the larger physical size needed to achieve that free area.</p>
   `;
 
   const recommendationContent = `
     <h3>6. Final Recommendation</h3>
-    <p>To achieve adequate ventilation for a Class 1, Division 2 classification under the specified conditions, a total <strong>free vent area of ${requiredArea.toFixed(2)} square feet</strong> is required.</p>
-    <p>In accordance with AGA XL1001, Section 5.2, for lighter-than-air gases like natural gas, this total area must be appropriately distributed between:</p>
+    <p>To achieve adequate ventilation for a Class 1, Division 2 classification, a total installed <strong>gross vent area of ${totalRequiredGrossArea.toFixed(2)} square feet</strong> is required.</p>
+    <p>This total area must be appropriately distributed between low and high vents to ensure proper air circulation for lighter-than-air gases:</p>
     <ul>
-      <li><strong>Low-level inlet vents:</strong> Located as low as practicable to introduce cool, fresh make-up air.</li>
-      <li><strong>High-level outlet vents:</strong> Located as high as practicable (e.g., roof or ridge vents) to allow warm air and potentially escaped gas to exhaust.</li>
+      <li><strong>Required Low-level Inlet Gross Area: ${grossInletArea.toFixed(2)} sq ft</strong></li>
+      <li><strong>Required High-level Outlet Gross Area: ${grossOutletArea.toFixed(2)} sq ft</strong></li>
     </ul>
-    <p>It is best practice to split the total area equally (50/50) between high and low openings to ensure effective cross-flow and prevent gas accumulation. For example:</p>
-    <ul>
-      <li><strong>${(requiredArea / 2).toFixed(2)} sq ft</strong> for low-level inlet vents.</li>
-      <li><strong>${(requiredArea / 2).toFixed(2)} sq ft</strong> for high-level outlet vents.</li>
-    </ul>
-    <p class="warning">Note: The term "free vent area" refers to the net clear area of the opening. Louvers, screens, and grilles can significantly reduce this area. The specified gross area of such devices must be larger to meet the required free area.</p>
+    <p>These gross areas will provide the necessary <strong>${singleOpeningFreeArea.toFixed(2)} sq ft of free area</strong> at each location (inlet and outlet).</p>
+    <p class="warning">Note: The "gross area" is the physical vent size needed. The "free area" is the net clear opening after accounting for obstructions. Always verify the free area percentage with the vent manufacturer's specifications.</p>
   `;
   
   const assumptionsAndDisclaimer = `
@@ -762,9 +802,9 @@ function generateEngineeringReport(inputs: ReportInputs): string {
     <h2>Engineering Report: Ventilation Calculation</h2>
     
     <h3>Executive Summary</h3>
-    <p>Based on the provided data and selected calculation method, the <strong>Total Required Free Vent Area</strong> to achieve the ventilation goal is:</p>
+    <p>Based on the provided data and selected calculation method, the <strong>Total Required Gross Vent Area</strong> to achieve the ventilation goal is:</p>
     <div class="summary-result">
-      ${requiredArea.toFixed(2)} sq ft
+      ${totalRequiredGrossArea.toFixed(2)} sq ft
     </div>
 
     ${summaryInputsContent}
