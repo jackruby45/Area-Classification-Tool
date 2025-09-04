@@ -872,9 +872,12 @@ function renderResultsSummaryReport(results: any, formData: any, recommendations
                 <tr><td>Required Outlet Vent Free Area</td><td>${isFinite(finalRequiredArea) ? finalRequiredArea.toFixed(2) + ` ${units.area}` : 'N/A'}</td></tr>
             </tbody>
         </table>
-
-        <h3>Conclusion & Recommendations</h3>
-        <p>The total required free area for natural ventilation has been calculated to be <strong>${isFinite(finalRequiredArea) ? finalRequiredArea.toFixed(2) : 'Not Achievable'} ${isFinite(finalRequiredArea) ? units.area : ''}</strong> for both the air inlet and air outlet. The following recommendations should be considered:</p>
+        
+        <h3>Conclusion</h3>
+        <p>The total required free area for natural ventilation, for both the air inlet and air outlet, has been calculated to be <strong>${isFinite(finalRequiredArea) ? finalRequiredArea.toFixed(2) : 'Not Achievable'} ${isFinite(finalRequiredArea) ? units.area : ''}</strong>. This is based on the input parameters and the <strong>${methodTitle}</strong> methodology.</p>
+        
+        <h3>Analysis & Recommendations</h3>
+        <p>The following recommendations should be considered for the final design:</p>
         <ul>${recommendationsHtml}</ul>
     `;
     resultsSummaryContent.innerHTML = reportHtml;
@@ -1068,6 +1071,17 @@ Q_v &= \\frac{Q_{\\text{leak}}}{C \\times (LFL / 100)} \\\\
 \\end{align*}
         `;
     }
+    
+    const assumptions = [
+        "Inlet and outlet vents are of equal size.",
+        "Inlet vents are located near the floor, and outlet vents are located near the roof peak.",
+        "The building is considered reasonably well-sealed, with leakage primarily through the specified ventilation openings.",
+        "Air density is assumed to be uniform at any given level inside and outside the building.",
+        "The calculation is based on steady-state conditions, not accounting for short-term gusts or lulls in wind.",
+        "The provided average wind speed is representative of the conditions at the building's location and height.",
+        "Obstructions like louvers and screens are accounted for by a uniform reduction coefficient applied to the entire vent area."
+    ];
+    const assumptionItems = assumptions.map(item => `\\item ${escapeLatex(item)}`).join('\n');
 
     return `
 \\documentclass[11pt]{article}
@@ -1298,6 +1312,12 @@ A_{\\text{req}} &= \\frac{Q_v}{F_{\\text{total}}} \\\\
 This area is required for both the inlet and outlet vents.
 
 \\newpage
+\\section{Assumptions}
+The following assumptions were made during the calculation:
+\\begin{itemize}
+${assumptionItems}
+\\end{itemize}
+
 \\section{Final Results}
 The table below summarizes the final calculated ventilation requirements.
 
