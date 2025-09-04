@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ventilation Calculator for Electrical Area Classification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+          "marked": "https://esm.sh/marked@^12.0.0"
+        }
+      }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <main>
+      <header>
+        <h1>Ventilation Calculator</h1>
+        <p>
+          For Electrical Area Classification based on AGA XL1001 &amp; API RP 500
+          guidelines. By Tim Bickford Rev 1
+        </p>
+      </header>
+
+      <nav class="tabs">
+        <button id="calculator-tab" class="tab-btn active-tab" aria-selected="true">Calculator</button>
+        <button id="admin-tab" class="tab-btn" aria-selected="false">Admin</button>
+        <button id="report-tab" class="tab-btn hidden" aria-selected="false">Report</button>
+      </nav>
+
+      <div id="calculator-content">
+        <form id="calc-form" aria-labelledby="form-title">
+          
+          <fieldset class="form-section">
+            <legend>Project Information</legend>
+            <div class="input-grid">
+              <div class="input-group full-width-item">
+                  <label for="project-name">Project Name</label>
+                  <input type="text" id="project-name" name="project-name" placeholder="e.g., Compressor Station Upgrade" required value="Juniper Ridge District regulating station">
+              </div>
+              <div class="input-group">
+                  <label for="location">Location</label>
+                  <input type="text" id="location" name="location" placeholder="e.g., Midland, TX" required value="Montgomery Texas">
+              </div>
+              <div class="input-group">
+                  <label for="company">Company</label>
+                  <input type="text" id="company" name="company" placeholder="e.g., ACME Energy" required value="unitil">
+              </div>
+              <div class="input-group">
+                  <label for="date">Date</label>
+                  <input type="date" id="date" name="date" required>
+              </div>
+              <div class="input-group">
+                  <label for="performed-by">Performed By</label>
+                  <input type="text" id="performed-by" name="performed-by" placeholder="e.g., J. Doe" required value="Jeff Croke">
+              </div>
+            </div>
+          </fieldset>
+          
+          <fieldset class="form-section">
+            <legend id="form-title">Building &amp; Environmental Data</legend>
+            <div class="input-grid">
+              <div class="input-group full-width-item">
+                <label for="calculation-goal">Calculation Goal</label>
+                <select id="calculation-goal" name="calculation-goal" required>
+                  <option value="reclassify-d1-to-d2">
+                    Reclassify from Class 1 Div 1 to Div 2
+                  </option>
+                  <option value="maintain-d2" selected>
+                    Maintain an existing Class 1 Div 2 classification
+                  </option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="length">Building Length (ft)</label>
+                <input
+                  type="number"
+                  id="length"
+                  name="length"
+                  placeholder="e.g., 20"
+                  required
+                  min="1"
+                  step="any"
+                  value="20"
+                />
+              </div>
+              <div class="input-group">
+                <label for="width">Building Width (ft)</label>
+                <input
+                  type="number"
+                  id="width"
+                  name="width"
+                  placeholder="e.g., 15"
+                  required
+                  min="1"
+                  step="any"
+                  value="9.4167"
+                />
+              </div>
+              <div class="input-group">
+                <label for="height">Building Height (ft)</label>
+                <input
+                  type="number"
+                  id="height"
+                  name="height"
+                  placeholder="e.g., 10"
+                  required
+                  min="1"
+                  step="any"
+                  value="7.67"
+                />
+              </div>
+              <div class="input-group">
+                <label for="inside-temp">Inside Temperature (°F)</label>
+                <input
+                  type="number"
+                  id="inside-temp"
+                  name="inside-temp"
+                  placeholder="e.g., 70"
+                  required
+                  step="any"
+                  value="68"
+                />
+              </div>
+              <div class="input-group">
+                <label for="outside-temp">Outside Temperature (°F)</label>
+                <input
+                  type="number"
+                  id="outside-temp"
+                  name="outside-temp"
+                  placeholder="e.g., 50"
+                  required
+                  step="any"
+                  value="50"
+                />
+              </div>
+              <div class="input-group full-width-item">
+                <label for="calculation-method">Calculation Method</label>
+                <select id="calculation-method" name="calculation-method" required>
+                  <option value="area-method" selected>
+                    Area Method (AGA XL1001)
+                  </option>
+                  <option value="fugitive-emission-method">
+                    Fugitive Emission Method (API RP 500)
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div id="fugitive-emission-inputs-wrapper" class="hidden">
+              <h3 class="subsection-title">Fugitive Emission Parameters</h3>
+              <div class="input-grid">
+                <div class="input-group">
+                  <label for="leak-rate">Gas Leak Rate (Q_leak) (CFM)</label>
+                  <input
+                    type="number"
+                    id="leak-rate"
+                    name="leak-rate"
+                    placeholder="e.g., 10"
+                    min="0.01"
+                    step="any"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="lfl">Gas LFL (%)</label>
+                  <input
+                    type="number"
+                    id="lfl"
+                    name="lfl"
+                    placeholder="e.g., 5"
+                    min="0.1"
+                    step="any"
+                    value="5"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="safety-factor">Safety Factor (C)</label>
+                  <input
+                    type="number"
+                    id="safety-factor"
+                    name="safety-factor"
+                    placeholder="e.g., 0.25"
+                    min="0.01"
+                    max="1"
+                    step="any"
+                    value="0.25"
+                  />
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <button type="submit" id="calculate-btn">
+            Calculate Required Ventilation
+          </button>
+        </form>
+
+        <section id="results-container" aria-live="polite">
+          <div id="results-placeholder">
+            Enter your building's data above to calculate the required vent area.
+          </div>
+          <div id="loading-indicator" class="hidden">
+            <div class="spinner"></div>
+            <p>Consulting with engineering standards and calculating...</p>
+          </div>
+          <div id="error-message" class="hidden"></div>
+          <div id="results-content"></div>
+        </section>
+      </div>
+      
+      <div id="admin-login-content" class="hidden">
+        <form id="admin-login-form" class="content-panel">
+            <h2>Admin Login</h2>
+            <div class="input-group">
+                <label for="admin-password">Password</label>
+                <input type="password" id="admin-password" name="admin-password" required>
+            </div>
+            <div id="login-error-message" class="hidden"></div>
+            <button type="submit" id="login-btn">Login</button>
+        </form>
+      </div>
+
+      <div id="admin-panel-content" class="hidden">
+         <section class="content-panel">
+            <h2>Admin Panel</h2>
+            <p>Admin features will be added here.</p>
+        </section>
+      </div>
+
+      <div id="report-content" class="hidden">
+        <section class="content-panel">
+           <h2>LaTeX Report Code</h2>
+           <p>Copy the code below and paste it into an Overleaf project or any LaTeX editor.</p>
+           <div class="report-actions">
+                <button id="copy-latex-btn">Copy Code</button>
+           </div>
+           <pre><code id="latex-code-output">No report has been generated yet.</code></pre>
+       </section>
+     </div>
+
+    </main>
+    <script type="module" src="index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
