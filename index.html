@@ -8,7 +8,9 @@
       {
         "imports": {
           "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
-          "marked": "https://esm.sh/marked@^12.0.0"
+          "marked": "https://esm.sh/marked@^12.0.0",
+          "jspdf": "https://esm.sh/jspdf@^2.5.1",
+          "jspdf-autotable": "https://esm.sh/jspdf-autotable@^3.8.2"
         }
       }
     </script>
@@ -26,6 +28,7 @@
 
       <nav class="tabs">
         <button id="calculator-tab" class="tab-btn active-tab" aria-selected="true">Calculator</button>
+        <button id="results-summary-tab" class="tab-btn hidden" aria-selected="false">Results</button>
         <button id="admin-tab" class="tab-btn" aria-selected="false">Admin</button>
         <button id="report-tab" class="tab-btn hidden" aria-selected="false">Report</button>
       </nav>
@@ -54,13 +57,14 @@
               </div>
               <div class="input-group">
                   <label for="performed-by">Performed By</label>
-                  <input type="text" id="performed-by" name="performed-by" placeholder="e.g., J. Doe" required value="Jeff Croke">
+                  <input type="text" id="performed-by" name="performed-by" placeholder="e.g., J. Doe" required value="Tim Bickford🎸">
               </div>
             </div>
           </fieldset>
           
           <fieldset class="form-section">
             <legend id="form-title">Building &amp; Environmental Data</legend>
+
             <div class="input-grid">
               <div class="input-group full-width-item">
                 <label for="calculation-goal">Calculation Goal</label>
@@ -79,9 +83,8 @@
                   type="number"
                   id="length"
                   name="length"
-                  placeholder="e.g., 20"
                   required
-                  min="1"
+                  min="0"
                   step="any"
                   value="20"
                 />
@@ -92,70 +95,115 @@
                   type="number"
                   id="width"
                   name="width"
-                  placeholder="e.g., 15"
                   required
-                  min="1"
+                  min="0"
                   step="any"
                   value="9.4167"
                 />
               </div>
               <div class="input-group">
-                <label for="height">Building Height (ft)</label>
+                <label for="height" title="The vertical distance between the center of the lower and upper ventilation openings.">Building Height (ft)</label>
                 <input
                   type="number"
                   id="height"
                   name="height"
-                  placeholder="e.g., 10"
                   required
-                  min="1"
+                  min="0"
                   step="any"
                   value="7.67"
                 />
               </div>
               <div class="input-group">
-                <label for="inside-temp">Inside Temperature (°F)</label>
+                <label for="inside-temp">
+                  Inside Temperature (°F)
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Worst-case for ventilation is the smallest temperature difference (approaching 0°F), as this minimizes the 'Stack Effect' driving force.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="inside-temp"
                   name="inside-temp"
-                  placeholder="e.g., 70"
                   required
                   step="any"
                   value="68"
                 />
               </div>
               <div class="input-group">
-                <label for="outside-temp">Outside Temperature (°F)</label>
+                <label for="outside-temp">
+                  Outside Temperature (°F)
+                   <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Worst-case for ventilation is the smallest temperature difference (approaching 0°F), as this minimizes the 'Stack Effect' driving force.</span>
+                  </span>
+                </label>
                 <input
                   type="number"
                   id="outside-temp"
                   name="outside-temp"
-                  placeholder="e.g., 50"
                   required
                   step="any"
                   value="50"
                 />
               </div>
+              <div class="input-group">
+                <label for="wind-velocity" title="A conservative, year-round average wind speed for the location.">Average Wind Velocity (mph)</label>
+                <input
+                  type="number"
+                  id="wind-velocity"
+                  name="wind-velocity"
+                  required
+                  min="0"
+                  step="any"
+                  value="7"
+                />
+              </div>
+
+              <div class="input-group">
+                <label for="building-orientation" title="The orientation of the building's vents relative to the prevailing wind direction.">Building Orientation</label>
+                <select id="building-orientation" name="building-orientation">
+                  <option value="1.0" selected>Perpendicular (0°) - Most Effective</option>
+                  <option value="0.7">Angled (45°) - Moderately Effective</option>
+                  <option value="0.3">Parallel (90°) - Least Effective</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="surrounding-terrain" title="The local environment affects wind speed at the building's height.">Surrounding Terrain</label>
+                <select id="surrounding-terrain" name="surrounding-terrain">
+                  <option value="1.0" selected>Open Terrain (Flat, open country)</option>
+                  <option value="0.85">Suburban / Wooded (Residential areas)</option>
+                  <option value="0.67">Urban / Industrial (City centers)</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="vent-opening-type" title="The physical shape of the vent opening affects airflow efficiency (Discharge Coefficient K).">Vent Opening Type (K)</label>
+                <select id="vent-opening-type" name="vent-opening-type">
+                  <option value="0.65" selected>Sharp-Edged Orifice (Typical, K=0.65)</option>
+                  <option value="0.98">Well-Rounded Inlet (Efficient, K=0.98)</option>
+                  <option value="0.50">Re-entrant (Inefficient, K=0.50)</option>
+                </select>
+              </div>
 
                <div class="input-group">
-                <label for="inlet-obstruction">Inlet Vent Obstruction</label>
+                <label for="inlet-obstruction" title="Accounts for airflow reduction from items like screens or louvers on the inlet vent.">Inlet Vent Obstruction</label>
                 <select id="inlet-obstruction" name="inlet-obstruction">
-                  <option value="1.0" selected>None (Unobstructed)</option>
+                  <option value="1.0">None (Unobstructed)</option>
                   <option value="0.92">Bird Screen (92% Free Area)</option>
                   <option value="0.85">Insect Screen (85% Free Area)</option>
                   <option value="0.75">Weather Hood (75% Free Area)</option>
-                  <option value="0.55">Standard Louver (55% Free Area)</option>
+                  <option value="0.55" selected>Standard Louver (55% Free Area)</option>
                   <option value="0.35">Acoustic Louver (35% Free Area)</option>
                 </select>
               </div>
               <div class="input-group">
-                <label for="outlet-obstruction">Outlet Vent Obstruction</label>
+                <label for="outlet-obstruction" title="Accounts for airflow reduction from items like screens or louvers on the outlet vent.">Outlet Vent Obstruction</label>
                 <select id="outlet-obstruction" name="outlet-obstruction">
-                  <option value="1.0" selected>None (Unobstructed)</option>
+                  <option value="1.0">None (Unobstructed)</option>
                   <option value="0.92">Bird Screen (92% Free Area)</option>
                   <option value="0.85">Insect Screen (85% Free Area)</option>
                   <option value="0.75">Weather Hood (75% Free Area)</option>
-                  <option value="0.55">Standard Louver (55% Free Area)</option>
+                  <option value="0.55" selected>Standard Louver (55% Free Area)</option>
                   <option value="0.35">Acoustic Louver (35% Free Area)</option>
                 </select>
               </div>
@@ -182,13 +230,12 @@
                     type="number"
                     id="leak-rate"
                     name="leak-rate"
-                    placeholder="e.g., 10"
-                    min="0.01"
+                    min="0"
                     step="any"
                   />
                 </div>
                 <div class="input-group">
-                  <label for="lfl">Gas LFL (%)</label>
+                  <label for="lfl" title="The Lower Flammable Limit of the potential gas leak.">Gas LFL (%)</label>
                   <input
                     type="number"
                     id="lfl"
@@ -200,7 +247,7 @@
                   />
                 </div>
                 <div class="input-group">
-                  <label for="safety-factor">Safety Factor (C)</label>
+                  <label for="safety-factor" title="Safety factor (often 0.25 for 25% LFL) to ensure dilution well below the flammable limit.">Safety Factor (C)</label>
                   <input
                     type="number"
                     id="safety-factor"
@@ -216,9 +263,13 @@
             </div>
           </fieldset>
 
-          <button type="submit" id="calculate-btn">
-            Calculate Required Ventilation
-          </button>
+          <div class="form-actions">
+            <button type="button" id="load-calc-btn" class="secondary-btn">Load Calculation from File</button>
+            <input type="file" id="load-file-input" class="hidden" accept=".json,application/json">
+            <button type="submit" id="calculate-btn">
+              Calculate Required Ventilation
+            </button>
+          </div>
         </form>
 
         <section id="results-container" aria-live="polite">
@@ -230,10 +281,17 @@
             <p>Consulting with engineering standards and calculating...</p>
           </div>
           <div id="error-message" class="hidden"></div>
-          <div id="results-content"></div>
+          <div id="results-content">
+             <!-- Results will be dynamically inserted here -->
+          </div>
         </section>
+
       </div>
       
+      <div id="results-summary-content" class="hidden content-panel">
+        <!-- Detailed results report will be dynamically inserted here -->
+      </div>
+
       <div id="admin-login-content" class="hidden">
         <form id="admin-login-form" class="content-panel">
             <h2>Admin Login</h2>
@@ -250,15 +308,19 @@
          <section class="content-panel">
             <h2>Admin Panel</h2>
             <p>Admin features will be added here.</p>
+            <div class="admin-actions">
+                <button id="logout-btn" class="secondary-btn">Logout</button>
+            </div>
         </section>
       </div>
 
       <div id="report-content" class="hidden">
         <section class="content-panel">
-           <h2>LaTeX Report Code</h2>
-           <p>Copy the code below and paste it into an Overleaf project or any LaTeX editor.</p>
+           <h2>Report Generation</h2>
+           <p>You can download a PDF report or copy the LaTeX code for use in an external editor like Overleaf.</p>
            <div class="report-actions">
-                <button id="copy-latex-btn">Copy Code</button>
+                <button id="download-pdf-btn">Download PDF</button>
+                <button id="copy-latex-btn">Copy LaTeX Code</button>
            </div>
            <pre><code id="latex-code-output">No report has been generated yet.</code></pre>
        </section>

@@ -1,4 +1,3 @@
-
 :root {
   --background-color: #1a1a1a;
   --surface-color: #2c2c2c;
@@ -142,7 +141,6 @@ header p {
     font-weight: bold;
 }
 
-
 #calc-form h2 {
     text-align: center;
     margin-bottom: 1.5rem;
@@ -180,6 +178,12 @@ header p {
     font-size: 1rem;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
+
+.input-group input.input-error {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 2px rgba(229, 115, 115, 0.25);
+}
+
 
 /* Style for date input placeholder text */
 input[type="date"]:required:invalid::-webkit-datetime-edit {
@@ -243,6 +247,31 @@ button:disabled {
     cursor: not-allowed;
 }
 
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+#calculate-btn {
+  grid-column: 2 / 3;
+}
+
+.secondary-btn {
+  background-color: var(--surface-color);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+.secondary-btn:hover, .secondary-btn:focus {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.admin-actions {
+    margin-top: 2rem;
+    max-width: 200px;
+}
+
 #results-container {
     min-height: 100px;
 }
@@ -297,15 +326,88 @@ button:disabled {
     border-radius: 4px;
 }
 
-#results-content h2, #results-content h3 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+#results-content h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+#results-content h3 {
+    text-align: center;
+    border-bottom: 2px solid var(--primary-color);
+    font-size: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.5rem;
 }
 
-#results-content h2 {
+#results-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    font-weight: bold;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.calculation-step {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.calculation-step .formula {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.calculation-step .calculation {
+    font-size: 1.1rem;
+    padding-left: 1rem;
+    margin-top: 0.5rem;
+}
+
+.calculation-step .calculation strong {
+    color: var(--primary-color);
+}
+
+.sub-calculation {
+    font-size: 0.95rem;
+    color: var(--label-color);
+    margin: 0.5rem 0 0.5rem 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border-color);
+}
+
+.sub-calculation ul {
+    list-style-type: disc;
+    margin-left: 2rem;
+    margin-top: 0.5rem;
+}
+
+.info-note {
+    margin-top: 1rem;
+    font-style: italic;
+    color: var(--label-color);
+    font-size: 0.9rem;
     text-align: center;
+    background-color: var(--background-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    text-align: center;
+    margin: 1rem 0;
 }
 
 .summary-result {
@@ -316,7 +418,7 @@ button:disabled {
     background-color: rgba(0, 123, 255, 0.1);
     padding: 1rem;
     border-radius: 6px;
-    margin: 1rem 0;
+    margin-bottom: 0.5rem;
 }
 
 .data-table {
@@ -335,15 +437,62 @@ button:disabled {
     width: 40%;
 }
 
-#results-content ul, #results-content ol {
-    padding-left: 2rem;
+.results-actions {
+  margin: 1.5rem 0;
 }
+#save-calc-btn {
+  max-width: 300px;
+  margin: 0 auto;
+  display: block;
+}
+
+
+/* Visualizations */
+.visuals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+    align-items: center;
+}
+
+.building-diagram-container, .contribution-chart-container {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1.5rem;
+}
+
+.building-diagram {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+}
+
+.contribution-chart .bar {
+    height: 30px;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+.contribution-chart .bar.stack {
+    background-color: #28a745;
+}
+
 
 /* Report View Styles */
 .report-actions {
+    display: flex;
+    gap: 1rem;
     margin-bottom: 1rem;
 }
-#copy-latex-btn {
+#copy-latex-btn, #download-pdf-btn {
     width: auto;
     padding: 0.5rem 1rem;
 }
@@ -361,4 +510,63 @@ button:disabled {
     max-height: 60vh;
     overflow-y: auto;
     border: 1px solid var(--border-color);
+}
+
+/* Tooltip Styles */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.tooltip-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--label-color);
+  color: var(--background-color);
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #333;
+  color: var(--text-color);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the icon */
+  left: 50%;
+  margin-left: -110px; /* Use half of the width to center */
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.85rem;
+  font-weight: normal;
+  line-height: 1.4;
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* At the bottom of the tooltip */
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
 }

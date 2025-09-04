@@ -1,5 +1,5 @@
 {
-  "name": "area-classification-tool",
+  "name": "area--classification-tool-7",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@google/genai": "^0.7.0",
-    "marked": "^12.0.0"
+    "marked": "^12.0.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
