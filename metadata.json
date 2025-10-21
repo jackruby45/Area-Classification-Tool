@@ -1,5 +1,5 @@
 {
-  "name": "Ventilation Calculator Rev-D",
-  "description": "Prompt Gemini in this simple example",
+  "name": "Electrical Area Classification FINAL-1",
+  "description": "A calculator for determining ventilation requirements for electrical area classification based on AGA XL1001 and API RP 500 standards.",
   "requestFramePermissions": []
 }

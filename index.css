@@ -8,6 +8,7 @@
   --border-color: #444;
   --error-color: #e57373;
   --warning-color: #ffc107;
+  --success-color: #28a745;
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
 }
@@ -23,40 +24,89 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   line-height: 1.6;
-  padding: 2rem;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 main {
   width: 100%;
-  max-width: 800px;
+  height: 100%;
+  max-width: none;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
 }
 
 header {
-  text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+  padding: 1rem 2rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
-header h1 {
+.header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#collapsible-header {
+  overflow: hidden;
+  max-height: 5rem; /* Give it enough space to expand */
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+  opacity: 1;
+  margin-top: 0.5rem;
+}
+
+#collapsible-header.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+#toggle-header-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  width: auto;
+  transition: background-color 0.2s;
+}
+
+#toggle-header-btn:hover {
+  background-color: var(--surface-color);
+}
+
+#toggle-header-btn svg {
+  display: block;
+  transition: transform 0.3s ease-out;
+  fill: var(--label-color);
+}
+
+#toggle-header-btn[aria-expanded="false"] svg {
+  transform: rotate(180deg);
+}
+
+.header-main h1 {
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
-header p {
+#collapsible-header p {
   color: var(--label-color);
   font-size: 1.1rem;
+  text-align: center;
 }
 
 .tabs {
     display: flex;
     gap: 0.5rem;
     border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    padding: 0 2rem;
+    flex-shrink: 0;
 }
 
 .tab-btn {
@@ -80,15 +130,34 @@ header p {
     font-weight: bold;
 }
 
-#calculator-content, 
+#calculator-content,
+#theory-content,
 #admin-login-content,
 #admin-panel-content,
 #report-content,
+#results-summary-content,
 #diagram-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
+
+/* Constrain width for content-heavy tabs, but not diagram */
+#calculator-content > *,
+#theory-content,
+#results-summary-content,
+#admin-login-content > *,
+#admin-panel-content > *,
+#report-content > * {
+    max-width: 1000px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 
 .content-panel {
     background-color: var(--surface-color);
@@ -146,6 +215,30 @@ header p {
     text-align: center;
     margin-bottom: 1.5rem;
     color: var(--text-color);
+}
+
+.mode-selector {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.radio-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.radio-group label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+.radio-group input[type="radio"] {
+    cursor: pointer;
 }
 
 .input-grid {
@@ -208,14 +301,14 @@ input[type="date"]:required:invalid::-webkit-datetime-edit {
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-#fugitive-emission-inputs-wrapper {
+#fugitive-emission-inputs-wrapper, #existing-vent-data {
     background-color: rgba(0,0,0,0.15);
     padding: 1.5rem;
     border-radius: 6px;
     margin-top: 1.5rem;
     border: 1px solid var(--border-color);
 }
-#fugitive-emission-inputs-wrapper .input-grid {
+#fugitive-emission-inputs-wrapper .input-grid, #existing-vent-data .input-grid {
     margin-bottom: 0;
 }
 
@@ -322,17 +415,17 @@ button:disabled {
 .warning {
     background-color: rgba(255, 193, 7, 0.1);
     color: var(--warning-color);
-    border: 1px solid var(--warning-color);
+    border: 1px solid var(--border-color);
     padding: 1rem;
     border-radius: 4px;
 }
 
-#results-content h2 {
+#results-content h2, #results-summary-content h2 {
     text-align: center;
     margin-bottom: 1rem;
 }
 
-#results-content h3 {
+#results-content h3, #results-summary-content h3 {
     text-align: center;
     border-bottom: 2px solid var(--primary-color);
     font-size: 1.5rem;
@@ -341,7 +434,7 @@ button:disabled {
     padding-bottom: 0.5rem;
 }
 
-#results-content h4 {
+#results-content h4, #results-summary-content h4 {
     margin-top: 1.5rem;
     margin-bottom: 0.75rem;
     color: var(--text-color);
@@ -422,16 +515,31 @@ button:disabled {
     margin-bottom: 0.5rem;
 }
 
+.verification-grid .full-width-item {
+    grid-column: 1 / -1;
+}
+
+.summary-result.status-adequate {
+    color: var(--success-color);
+    background-color: rgba(40, 167, 69, 0.1);
+}
+.summary-result.status-inadequate {
+    color: var(--error-color);
+    background-color: rgba(229, 115, 115, 0.1);
+}
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .data-table td, .data-table th {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     text-align: left;
+    vertical-align: middle;
 }
 
 .data-table th {
@@ -514,10 +622,24 @@ button:disabled {
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
+    align-items: center;
 }
 #copy-latex-btn, #download-pdf-btn {
     width: auto;
     padding: 0.5rem 1rem;
+}
+
+.overleaf-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+    white-space: nowrap;
+}
+
+.overleaf-link:hover {
+    color: var(--primary-hover-color);
+    text-decoration: underline;
 }
 
 #latex-code-output {
@@ -670,29 +792,63 @@ button:disabled {
 }
 
 
-/* Diagram Generator Styles */
-.diagram-layout {
+/* === Diagram Generator Styles === */
+#diagram-content {
+    padding: 1rem;
+    gap: 1rem;
+}
+#diagram-content > * {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+}
+.diagram-instructions {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.diagram-instructions h4 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+.diagram-instructions ol {
+    margin-left: 1.5rem;
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.diagram-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr 220px;
     gap: 1.5rem;
     background-color: var(--background-color);
     padding: 1rem;
     border-radius: 6px;
     border: 1px solid var(--border-color);
-    min-height: 500px;
+    min-height: 0; /* Override for flexbox */
+    height: auto;
+    flex-grow: 1;
 }
 
-.diagram-palette {
-    flex: 0 0 200px; /* Do not grow, do not shrink, base width 200px */
+.diagram-palette, .diagram-controls {
+    flex: 0 0 auto;
     padding: 1rem;
     background-color: var(--surface-color);
-    border-right: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    max-height: 100%;
+    overflow-y: auto;
 }
 
-.diagram-palette h4 {
+.diagram-palette h4, .diagram-controls h4 {
     text-align: center;
     color: var(--primary-color);
     margin-bottom: 0.5rem;
@@ -708,14 +864,12 @@ button:disabled {
     cursor: grab;
     text-align: center;
     transition: background-color 0.2s, border-color 0.2s;
-    user-select: none; /* prevent text selection while dragging */
+    user-select: none;
 }
-
 .palette-item:hover {
     background-color: #3a3a3a;
     border-color: var(--primary-color);
 }
-
 .palette-item:active {
     cursor: grabbing;
 }
@@ -727,42 +881,212 @@ button:disabled {
     align-items: center;
     background-color: var(--surface-color);
     border-radius: 4px;
-    overflow: hidden; /* Ensure SVG doesn't overflow */
+    overflow: hidden;
+    border: 1px solid var(--border-color);
 }
-
 #diagram-canvas {
     width: 100%;
     height: 100%;
     background-color: #222;
-    border: 1px dashed var(--border-color);
+}
+#diagram-canvas.panning {
+    cursor: grabbing;
+}
+#diagram-canvas.dragging-equipment {
+    cursor: move;
 }
 
+
+/* Diagram Controls */
+.control-group {
+    margin-bottom: 1rem;
+}
+.control-group label {
+    display: block;
+    font-weight: bold;
+    color: var(--label-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+}
+.button-group button {
+    flex-grow: 1;
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+#clear-diagram-btn {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+}
+
+/* Placed Equipment List */
+#equipment-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--background-color);
+    border-radius: 4px;
+}
+#equipment-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+#equipment-list li:last-child {
+    border-bottom: none;
+}
+.remove-equipment-btn {
+    background: transparent;
+    border: none;
+    color: var(--error-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    line-height: 1;
+}
+
+/* Diagram Legend */
+#diagram-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+#diagram-legend .legend-swatch {
+    width: 20px;
+    height: 15px;
+    border: 1px solid var(--border-color);
+}
+#diagram-legend .legend-swatch.zone-div1 {
+    background-color: rgba(229, 115, 115, 0.7);
+}
+#diagram-legend .legend-swatch.zone-div2 {
+    background-color: rgba(255, 193, 7, 0.7);
+}
+#diagram-legend .legend-label {
+    font-size: 0.9rem;
+}
+
+/* SVG Element Styles */
 .building-outline {
     fill: none;
     stroke: var(--primary-color);
     stroke-width: 2;
-    stroke-dasharray: 4 4;
 }
-
+.dimension-line {
+    stroke: var(--label-color);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+}
+.dimension-text {
+    fill: var(--label-color);
+    font-size: 12px;
+    text-anchor: middle;
+}
+.scale-bar {
+    stroke: var(--text-color);
+    stroke-width: 1.5;
+}
+.scale-text {
+    fill: var(--text-color);
+    font-size: 10px;
+    text-anchor: middle;
+}
 .equipment-icon {
     fill: var(--text-color);
     stroke: var(--primary-color);
     stroke-width: 1.5;
 }
+.draggable-equipment {
+    cursor: move;
+}
 
 .zone-div1 {
-    fill: rgba(229, 115, 115, 0.4); /* red */
+    fill: rgba(229, 115, 115, 0.4);
     stroke: var(--error-color);
     stroke-width: 1;
 }
-
 .zone-div2 {
-    fill: rgba(255, 193, 7, 0.4); /* yellow */
+    fill: rgba(255, 193, 7, 0.4);
     stroke: var(--warning-color);
     stroke-width: 1;
 }
+.zone-label {
+    fill: var(--text-color);
+    font-size: 10px;
+    font-weight: bold;
+    text-anchor: middle;
+    pointer-events: none; /* Make text non-interactive */
+}
+.dimension-radius-line {
+    stroke: #cccccc;
+    stroke-width: 1;
+    stroke-dasharray: 2 2;
+    pointer-events: none;
+}
+.dimension-radius-text {
+    fill: #ffffff;
+    font-size: 10px;
+    text-anchor: middle;
+    font-weight: bold;
+    pointer-events: none;
+    /* Add a slight stroke to make text stand out against busy backgrounds */
+    stroke: #1a1a1a;
+    stroke-width: 0.3px;
+    paint-order: stroke;
+}
 
-.diagram-actions {
-    margin-top: 1rem;
-    max-width: 200px;
+
+/* Theory Page Styles */
+#theory-content h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+#theory-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    font-weight: bold;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 0.75rem;
+    font-size: 1.2rem;
+}
+
+#theory-content p {
+    margin-bottom: 1rem;
+}
+
+#theory-content ul, #theory-content ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.equation {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: var(--background-color);
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    margin: 1rem 0;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.equation-inline {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: var(--background-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    color: var(--text-color);
 }

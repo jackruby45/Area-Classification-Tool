@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -6,12 +7,7 @@
     <link rel="stylesheet" href="index.css" />
     <script type="importmap">
       {
-        "imports": {
-          "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
-          "marked": "https://esm.sh/marked@^12.0.0",
-          "jspdf": "https://esm.sh/jspdf@^2.5.1",
-          "jspdf-autotable": "https://esm.sh/jspdf-autotable@^3.8.2"
-        }
+        "imports": {}
       }
     </script>
   <link rel="stylesheet" href="/index.css">
@@ -19,15 +15,25 @@
   <body>
     <main>
       <header>
-        <h1>Ventilation Calculator</h1>
-        <p>
-          For Electrical Area Classification based on AGA XL1001 &amp; API RP 500
-          guidelines. By Tim Bickford Rev 1
-        </p>
+        <div class="header-main">
+          <h1>Ventilation Calculator</h1>
+          <button id="toggle-header-btn" aria-expanded="true" aria-controls="collapsible-header" title="Toggle Header">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/>
+            </svg>
+          </button>
+        </div>
+        <div id="collapsible-header">
+          <p>
+            For Electrical Area Classification based on AGA XL1001 &amp; API RP 500
+            guidelines. By Tim Bickford Rev 2
+          </p>
+        </div>
       </header>
 
       <nav class="tabs">
         <button id="calculator-tab" class="tab-btn active-tab" aria-selected="true">Calculator</button>
+        <button id="theory-tab" class="tab-btn" aria-selected="false">Theory</button>
         <button id="results-summary-tab" class="tab-btn hidden" aria-selected="false">Results</button>
         <button id="diagram-tab" class="tab-btn hidden" aria-selected="false">Hazardous Area Diagram</button>
         <button id="admin-tab" class="tab-btn" aria-selected="false">Admin</button>
@@ -95,6 +101,17 @@
           
           <fieldset class="form-section">
             <legend id="form-title">Building &amp; Environmental Data</legend>
+            
+            <div class="mode-selector">
+              <div class="radio-group">
+                <input type="radio" id="design-mode-radio" name="calculation-mode-select" value="design" checked>
+                <label for="design-mode-radio">Design Mode (Calculate Required Vent Area)</label>
+              </div>
+              <div class="radio-group">
+                <input type="radio" id="verification-mode-radio" name="calculation-mode-select" value="verification">
+                <label for="verification-mode-radio">Verification Mode (Check Existing Vent Area)</label>
+              </div>
+            </div>
 
             <div class="input-grid">
               <div class="input-group full-width-item">
@@ -106,12 +123,9 @@
                   </span>
                 </label>
                 <select id="calculation-goal" name="calculation-goal" required>
-                  <option value="reclassify-d1-to-d2">
-                    Reclassify from Class 1 Div 1 to Div 2
-                  </option>
-                  <option value="maintain-d2" selected>
-                    Maintain an existing Class 1 Div 2 classification
-                  </option>
+                  <option value="reclassify-d1-to-d2">Reclassify from Class 1 Div 1 to Div 2</option>
+                  <option value="design-new-d2" selected>Design for New Class 1 Div 2 Area</option>
+                  <option value="reclassify-d2-to-non-classified">Reclassify Class 1 Div 2 to Non-Classified Area</option>
                 </select>
               </div>
                <div class="input-group full-width-item">
@@ -277,7 +291,7 @@
                 </select>
               </div>
 
-               <div class="input-group">
+               <div class="input-group" id="inlet-obstruction-group">
                 <label for="inlet-obstruction">
                   Inlet Vent Obstruction
                   <span class="tooltip-container">
@@ -294,7 +308,7 @@
                   <option value="0.35">Acoustic Louver (35% Free Area)</option>
                 </select>
               </div>
-              <div class="input-group">
+              <div class="input-group" id="outlet-obstruction-group">
                 <label for="outlet-obstruction">
                   Outlet Vent Obstruction
                   <span class="tooltip-container">
@@ -331,8 +345,34 @@
               </div>
             </div>
 
+            <div id="existing-vent-data" class="hidden">
+              <h3 class="subsection-title">Existing Vent Data</h3>
+              <div class="input-grid">
+                <div class="input-group">
+                  <label for="existing-inlet-area">Existing Inlet Gross Area (ft²)</label>
+                  <input type="number" id="existing-inlet-area" name="existing-inlet-area" min="0" step="any" placeholder="e.g., 25">
+                </div>
+                <div class="input-group">
+                  <label for="existing-outlet-area">Existing Outlet Gross Area (ft²)</label>
+                  <input type="number" id="existing-outlet-area" name="existing-outlet-area" min="0" step="any" placeholder="e.g., 25">
+                </div>
+              </div>
+            </div>
+
             <div id="fugitive-emission-inputs-wrapper" class="hidden">
               <h3 class="subsection-title">Fugitive Emission Source Builder</h3>
+              <div class="input-group full-width-item">
+                <label for="fugitive-factor-set">
+                  Emission Factor Set
+                  <span class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <span class="tooltip-text">Select the industry standard for component leak rates. "Oil and Gas Production" is a common standard. "SOCMI" (Synthetic Organic Chemical Manufacturing Industry) provides alternative factors that may be more appropriate for chemical processing facilities.</span>
+                  </span>
+                </label>
+                <select id="fugitive-factor-set" name="fugitive-factor-set">
+                  <!-- Options will be populated by JS. Oil & Gas will be default. -->
+                </select>
+              </div>
               <div class="source-builder-grid">
                   <div class="input-group">
                       <label for="fugitive-source-type">Component Type</label>
@@ -413,7 +453,7 @@
           </div>
           <div id="loading-indicator" class="hidden">
             <div class="spinner"></div>
-            <p>Consulting with engineering standards and calculating...</p>
+            <p>Calculating...</p>
           </div>
           <div id="error-message" class="hidden"></div>
           <div id="results-content">
@@ -423,13 +463,131 @@
 
       </div>
       
+      <div id="theory-content" class="hidden content-panel">
+          <h2>Ventilation Calculation Methodologies</h2>
+          <p>This section details the two primary methodologies available in the calculator for determining ventilation requirements. Each method is suited for different scenarios and is based on established industry standards.</p>
+      
+          <hr style="margin: 2rem 0; border-color: var(--border-color);">
+      
+          <h3>Method 1: Area Method (AGA Report No. XL1001)</h3>
+          <p>The Area Method, as outlined in the American Gas Association's report "Classification of Locations for Electrical Installations in Gas Utility Areas" (XL1001), provides a conservative, rule-of-thumb approach for determining ventilation requirements. It is best suited for general-purpose buildings where specific sources of gas release are not defined or quantified.</p>
+          <p>The core principle is to ensure a baseline level of air quality and safety by requiring a sufficient rate of air exchange to dilute any minor, unforeseen fugitive emissions, preventing the formation of a hazardous atmosphere.</p>
+          
+          <h4>1.1 Source Documentation and Formula Basis</h4>
+          <ul>
+              <li><strong>Source Document:</strong> AGA Report No. XL1001, Appendix B, "Ventilation Calculations".</li>
+              <li><strong>Principle:</strong> The required ventilation rate (Qv) is determined as the <strong>greater</strong> of two distinct calculations: one based on the building's total volume (ensuring air changes) and one based on its floor area.</li>
+          </ul>
+      
+          <h4>1.2 Criterion 1: Air Changes per Hour (ACH)</h4>
+          <p>This criterion ensures that the entire volume of air within the building is refreshed at a regular interval. The standard specifies a complete air change in <strong>less than 5 minutes</strong>.</p>
+          <div class="equation">Q<sub>v,ACH</sub> = Building Volume (ft³) / 5 minutes</div>
+      
+          <h4>1.3 Criterion 2: Rate per Floor Area</h4>
+          <p>This criterion establishes a minimum airflow based on the building's footprint. AGA XL1001 references a base rate of 1.0 CFM/ft² from other standards and applies a <strong>safety factor of 1.5</strong>.</p>
+          <div class="equation">Q<sub>v,Floor</sub> = Floor Area (ft²) &times; 1.5 CFM/ft²</div>
+      
+          <h4>1.4 Final Required Ventilation Rate (Qv)</h4>
+          <p>The controlling requirement is the larger of the two values calculated above, ensuring the more conservative condition is met.</p>
+          <div class="equation">Q<sub>v</sub> = max(Q<sub>v,ACH</sub>, Q<sub>v,Floor</sub>)</div>
+
+          <h4>1.5 Rationale for Not Using Specific Leakage Rates</h4>
+          <p>A key distinction of the AGA XL1001 Area Method is that it does not rely on counting individual components or using predetermined equipment leakage rates. The rationale for this approach is rooted in its intended application and conservative safety philosophy:</p>
+          <ul>
+              <li><strong>General Applicability:</strong> The method is designed for a wide range of gas utility areas (e.g., regulator stations, meter houses) where a detailed inventory of every potential small leak source (like valve packing, gaskets, or threaded fittings) is often impractical or changes over time.</li>
+              <li><strong>Conservative Design Philosophy:</strong> Rather than quantifying known leaks, the Area Method presumes that minor, unforeseen, or intermittent fugitive emissions are possible. It provides a robust, prescriptive ventilation rate sufficient to dilute these potential emissions, ensuring the area does not become hazardous without requiring a complex component-by-component analysis.</li>
+              <li><strong>Simplicity and Standardization:</strong> By basing the calculation on simple, stable building dimensions (volume and floor area), the method provides a standardized and easily verifiable baseline for safety across many similar facilities. This "macro" approach contrasts with the "micro" (component-level) analysis of the Fugitive Emission Method, which is better suited for process areas where significant, quantifiable leak sources are the primary concern.</li>
+          </ul>
+          
+          <hr style="margin: 2rem 0; border-color: var(--border-color);">
+      
+          <h3>Method 2: Fugitive Emission Method (API RP 500)</h3>
+          <p>The Fugitive Emission Method, based on guidelines from API Recommended Practice 500, is a targeted approach used when potential leak sources can be identified and quantified. This method calculates the precise ventilation rate required to dilute a substance from a known potential leak to a concentration well below its Lower Flammable Limit (LFL). It offers two sub-approaches for estimating the leak rate.</p>
+      
+          <h4>2.1 Average Emission Factor Approach</h4>
+          <p>This approach calculates expected leak rates using fleet-wide average emission factors. It is best suited for emission inventories, regulatory reporting, and baseline engineering design where an average performance across many components is considered.</p>
+          
+          <h5>Source Documentation and Formula</h5>
+          <ul>
+              <li><strong>Equation Source:</strong> API Recommended Practice 500 (API RP 500), Appendix B.1</li>
+              <li><strong>Emission Data Source:</strong> U.S. EPA, "Protocol for Equipment Leak Emission Estimates" (EPA-453/R-95-017), Table 2-4.</li>
+              <li><strong>Governing Formula:</strong>
+                  <div class="equation">G = (E &times; V) / (60 &times; mw)</div>
+              </li>
+          </ul>
+      
+          <h5>Variable Definitions</h5>
+          <table class="data-table">
+              <thead><tr><th>Variable</th><th>Value</th><th>Source and Rationale</th></tr></thead>
+              <tbody>
+                  <tr><td>G</td><td>Varies</td><td>The final calculated leak rate in cubic feet per minute (cfm).</td></tr>
+                  <tr><td>E</td><td>Varies</td><td>The mass emission rate in lb/hr, converted from the kg/hr values in EPA Table 2-4.</td></tr>
+                  <tr><td>V</td><td>379.8 ft³/lb-mol</td><td>The molar volume of an ideal gas at base conditions of 14.7 psia and 60°F.</td></tr>
+                  <tr><td>mw</td><td>16.04 lb/lb-mol</td><td>The molecular weight for methane-dominant natural gas.</td></tr>
+                  <tr><td>60</td><td>60 min/hr</td><td>A constant to convert hours to minutes.</td></tr>
+              </tbody>
+          </table>
+      
+          <h5>Final Table: Average Natural Gas Equipment Leak Rates</h5>
+          <p>The following values are used in the calculator when the "Average Emission Factors" set is selected.</p>
+          <table class="data-table">
+              <thead><tr><th>Equipment Type</th><th>Emission Factor (kg/hr/source)</th><th>Calculated Leak Rate (cfm/source)</th></tr></thead>
+              <tbody>
+                  <tr><td>Valves</td><td>4.5 &times; 10<sup>-3</sup></td><td><strong>0.00392</strong></td></tr>
+                  <tr><td>Connectors</td><td>2.0 &times; 10<sup>-4</sup></td><td><strong>0.00017</strong></td></tr>
+                  <tr><td>Flanges</td><td>3.9 &times; 10<sup>-4</sup></td><td><strong>0.00034</strong></td></tr>
+              </tbody>
+          </table>
+      
+          <h4>2.2 Pegged (Maximum) Emission Rate Approach</h4>
+          <p>This approach calculates the leak rate from a component known to be leaking significantly (e.g., saturating a gas detector). It is essential for safety-critical applications like ventilation design for worst-case scenarios.</p>
+      
+          <h5>Source Documentation and Formula</h5>
+          <ul>
+              <li><strong>Equation Source:</strong> Derived from Ideal Gas Law principles, consistent with API RP 500.</li>
+              <li><strong>Emission Data Source:</strong> Published pegged emission rates for gas service components.</li>
+              <li><strong>Governing Formula:</strong>
+                  <div class="equation">Q<sub>scfm</sub> = E<sub>TOC</sub> &times; CF</div>
+              </li>
+          </ul>
+      
+          <h5>Variable Definitions</h5>
+          <table class="data-table">
+              <thead><tr><th>Variable</th><th>Value</th><th>Source and Rationale</th></tr></thead>
+              <tbody>
+                  <tr><td>Q<sub>scfm</sub></td><td>Varies</td><td>The final calculated leak rate in standard cubic feet per minute (scfm).</td></tr>
+                  <tr><td>E<sub>TOC</sub></td><td>Varies</td><td>The pegged mass emission rate in kg/hr for a component with a saturated leak reading.</td></tr>
+                  <tr><td>CF</td><td>0.801</td><td>The overall Conversion Factor derived from gas properties and unit conversions to yield cfm from kg/hr.</td></tr>
+              </tbody>
+          </table>
+      
+          <h5>Final Table: Pegged Natural Gas Equipment Leak Rates</h5>
+          <p>The following values are used in the calculator when the "Pegged (Maximum) Rates" set is selected.</p>
+          <table class="data-table">
+              <thead><tr><th>Equipment Type</th><th>Mass Emission Rate (E<sub>TOC</sub>) [kg/hr]</th><th>Calculated Leak Rate (Q<sub>scfm</sub>)</th></tr></thead>
+              <tbody>
+                  <tr><td>Valves/All</td><td>0.140</td><td><strong>0.112</strong></td></tr>
+                  <tr><td>Flanges/All</td><td>0.084</td><td><strong>0.067</strong></td></tr>
+                  <tr><td>Threaded Connections/All</td><td>0.030</td><td><strong>0.024</strong></td></tr>
+              </tbody>
+          </table>
+      </div>
+
       <div id="results-summary-content" class="hidden content-panel">
         <!-- Detailed results report will be dynamically inserted here -->
       </div>
 
       <div id="diagram-content" class="hidden">
-        <div class="info-note" style="text-align: left; padding: 1rem; margin-bottom: 1rem;">
-          Drag equipment from the palette on the left onto the building floor plan. The diagram uses a top-down view. Distances are to scale.
+        <div class="diagram-instructions">
+            <h4>How to Use the Diagram Tool</h4>
+            <ol>
+                <li>The building floor plan is automatically scaled based on the dimensions from the calculator.</li>
+                <li>Drag equipment from the <strong>Palette</strong> on the left and drop it onto the floor plan.</li>
+                <li>Hazardous area zones (Div 1 & 2) will be drawn to scale around each piece of equipment.</li>
+                <li>Use your mouse wheel to <strong>Zoom</strong> and click-and-drag to <strong>Pan</strong> the view.</li>
+                <li>Use the controls on the right to manage the view and the placed equipment.</li>
+                <li>The final diagram can be included in the generated PDF report.</li>
+            </ol>
         </div>
         <div class="diagram-layout">
             <div id="diagram-palette" class="diagram-palette">
@@ -439,9 +597,30 @@
             <div class="canvas-wrapper">
                 <svg id="diagram-canvas"></svg>
             </div>
-        </div>
-        <div class="diagram-actions">
-            <button id="clear-diagram-btn" class="secondary-btn">Clear Diagram</button>
+            <div id="diagram-controls" class="diagram-controls">
+                <h4>Controls & Info</h4>
+                <div class="control-group">
+                    <label>View Controls</label>
+                    <div class="button-group">
+                        <button id="zoom-in-btn" title="Zoom In">+</button>
+                        <button id="zoom-out-btn" title="Zoom Out">-</button>
+                        <button id="reset-view-btn" title="Reset View">Reset</button>
+                    </div>
+                </div>
+                 <div class="control-group">
+                    <label>Legend</label>
+                    <div id="diagram-legend">
+                        <!-- Legend populated by JS -->
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Placed Equipment</label>
+                    <ul id="equipment-list">
+                       <!-- List populated by JS -->
+                    </ul>
+                    <button id="clear-diagram-btn" class="secondary-btn">Clear All Equipment</button>
+                </div>
+            </div>
         </div>
       </div>
 
@@ -470,10 +649,10 @@
       <div id="report-content" class="hidden">
         <section class="content-panel">
            <h2>Report Generation</h2>
-           <p>You can download a PDF report or copy the LaTeX code for use in an external editor like Overleaf.</p>
+           <p>You can copy the LaTeX code for use in an external editor like Overleaf.</p>
            <div class="report-actions">
-                <button id="download-pdf-btn">Download PDF</button>
                 <button id="copy-latex-btn">Copy LaTeX Code</button>
+                <a href="https://www.overleaf.com/" target="_blank" rel="noopener noreferrer" class="overleaf-link">Paste Code into Overleaf</a>
            </div>
            <pre><code id="latex-code-output">No report has been generated yet.</code></pre>
        </section>
